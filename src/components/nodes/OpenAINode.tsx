@@ -15,7 +15,7 @@ const AVAILABLE_MODELS = [
   { value: 'gpt-4.1', label: 'GPT-4.1' },
   { value: 'gpt-5-nano', label: 'GPT-5 Nano' },
   { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
-  { value: 'gpt-5', label: '<GPT-5></GPT-5> },
+  { value: 'gpt-5', label: 'GPT-5'},
 ];
 
 export function OpenAINode({ data, id }: NodeProps<OpenAINodeData>) {
