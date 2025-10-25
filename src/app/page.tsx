@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 import '../styles/nodes.css';
 import { FirecrawlNode } from '../components/nodes/FirecrawlNode';
 import { OpenAINode } from '../components/nodes/OpenAINode';
+import { GoogleSheetsNode } from '../components/nodes/GoogleSheetsNode';
 
 type NodeData = {
   label?: string;
@@ -19,8 +20,9 @@ type NodeData = {
 
 // Define nodeTypes outside component to prevent re-renders
 const nodeTypes = {
-  firecrawl: FirecrawlNode,
-  openai: OpenAINode,
+  firecrawl: FirecrawlNode as any,
+  openai: OpenAINode as any,
+  googleSheets: GoogleSheetsNode as any,
 };
  
 const initialNodes: Node<NodeData>[] = [
@@ -36,8 +38,29 @@ const initialNodes: Node<NodeData>[] = [
     position: { x: 100, y: 350 }, 
     data: {} 
   },
+  { 
+    id: 'googlesheets-1', 
+    type: 'googleSheets',
+    position: { x: 100, y: 650 }, 
+    data: {} 
+  },
 ];
-const initialEdges: Edge[] = [];
+const initialEdges: Edge[] = [
+  {
+    id: 'firecrawl-1-openai-1',
+    source: 'firecrawl-1',
+    target: 'openai-1',
+    sourceHandle: 'output',
+    targetHandle: 'input',
+  },
+  {
+    id: 'openai-1-googlesheets-1',
+    source: 'openai-1',
+    target: 'googlesheets-1',
+    sourceHandle: 'output',
+    targetHandle: 'input',
+  }
+];
  
 export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
