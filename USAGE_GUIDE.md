@@ -12,21 +12,29 @@ This application allows you to create workflows by connecting different AI nodes
 
 ### 1. Set up API Keys
 
-Create a `.env.local` file in the root directory with your API keys:
+Copy the example environment file and add your API keys:
+
+```bash
+cp .env.example .env.local
+```
+
+Then edit `.env.local` with your actual API keys:
 
 ```env
 # Firecrawl API Key - Get it from https://firecrawl.dev
-NEXT_PUBLIC_FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+NEXT_PUBLIC_FIRECRAWL_API_KEY=your_actual_firecrawl_key
 
 # OpenAI API Key - Get it from https://platform.openai.com
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_OPENAI_API_KEY=your_actual_openai_key
 
 # Google Sheets Service Account Credentials - Get from Google Cloud Console
 GOOGLE_SHEETS_CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
-GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----END PRIVATE KEY-----"
+GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_actual_private_key\n-----END PRIVATE KEY-----"
 ```
 
-> **Note**: See `docs/google-sheets-setup.md` for detailed Google Sheets API setup instructions.
+> **Security Note**: Never commit `.env.local` with real API keys to version control!
+
+> **Google Sheets Setup**: See `docs/google-sheets-setup.md` for detailed Google Sheets API setup instructions.
 
 ### 2. How to Use the Workflow
 
