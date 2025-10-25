@@ -3,8 +3,11 @@ A platform for creating workflow automations
 
 ## ✨ Features
 
-- A visual editor that allows users to create, connect, and rearrange workflows
-- Node types such as: Web Scraping (Input a website URL and get a summary about the website back)
+- A visual workflow that allows users to run a predefined workflow
+- Node types:
+   1. Web Scraping: FireCrawl Scraper
+   2. OpenAI Chat: Structured Output Extractor
+   3. Google sheet 
 
 ## 🛠️ Tech Stack
 
@@ -64,6 +67,6 @@ Open your browser and go to http://localhost:3000
 <a href=""> Youtube Video</a>
 
 ## 🧠 Future Improvements
-- 
+- Create a visual editor 
 
 
