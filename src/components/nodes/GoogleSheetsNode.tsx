@@ -66,11 +66,27 @@ export function GoogleSheetsNode({ data, id }: NodeProps<any>) {
       
       // Extract response from OpenAI nodes
       if (sourceNode.type === 'openai' && nodeData?.response) {
+        // Check if the response contains JSON
+        const hasJSON = (() => {
+          try {
+            const jsonMatch = nodeData.response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (jsonMatch) {
+              JSON.parse(jsonMatch[0]);
+              return true;
+            }
+            JSON.parse(nodeData.response);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        })();
+
         return {
           type: 'openai',
-          label: 'AI Response',
+          label: hasJSON ? 'AI Response (JSON detected)' : 'AI Response',
           content: nodeData.response,
-          preview: nodeData.response.substring(0, 150) + (nodeData.response.length > 150 ? '...' : '')
+          preview: nodeData.response.substring(0, 150) + (nodeData.response.length > 150 ? '...' : ''),
+          hasJSON: hasJSON
         };
       }
 
@@ -80,6 +96,22 @@ export function GoogleSheetsNode({ data, id }: NodeProps<any>) {
     return sourceData.length > 0 ? sourceData : null;
   }, [currentEdges, currentNodes, id]);
 
+  // Helper function to parse JSON from text
+  const tryParseJSON = useCallback((text: string) => {
+    try {
+      // Look for JSON objects or arrays in the text
+      const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      
+      // Try parsing the entire text as JSON
+      return JSON.parse(text);
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
   // Helper function to prepare data for Google Sheets
   const prepareDataForSheets = useCallback((inputData: any[]) => {
     const rows: string[][] = [];
@@ -88,18 +120,55 @@ export function GoogleSheetsNode({ data, id }: NodeProps<any>) {
       // Add header for each data source
       rows.push([`${data.label} (Source ${index + 1})`]);
       
-      // Split content into lines and add each as a row
-      const lines = data.content.split('\n').filter((line: string) => line.trim());
-      
       // For structured content, try to parse and organize
       if (data.type === 'openai') {
-        // For AI responses, try to split into paragraphs
-        const paragraphs = data.content.split('\n\n').filter((p: string) => p.trim());
-        paragraphs.forEach((paragraph: string) => {
-          rows.push([paragraph.trim()]);
-        });
+        // Try to parse as JSON first
+        const parsedJSON = tryParseJSON(data.content);
+        
+        if (parsedJSON) {
+          // Handle JSON output - create columns for each property
+          if (Array.isArray(parsedJSON)) {
+            // Handle array of objects
+            if (parsedJSON.length > 0 && typeof parsedJSON[0] === 'object') {
+              // Create header row with property names
+              const headers = Object.keys(parsedJSON[0]);
+              rows.push(headers);
+              
+              // Add data rows
+              parsedJSON.forEach(item => {
+                const row = headers.map(header => {
+                  const value = item[header];
+                  return typeof value === 'object' ? JSON.stringify(value) : String(value || '');
+                });
+                rows.push(row);
+              });
+            } else {
+              // Simple array - each item in its own row
+              parsedJSON.forEach(item => {
+                rows.push([String(item)]);
+              });
+            }
+          } else if (typeof parsedJSON === 'object') {
+            // Handle single object - create two columns (Property, Value)
+            rows.push(['Property', 'Value']);
+            Object.entries(parsedJSON).forEach(([key, value]) => {
+              const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value || '');
+              rows.push([key, stringValue]);
+            });
+          } else {
+            // Single value
+            rows.push([String(parsedJSON)]);
+          }
+        } else {
+          // Not valid JSON, fall back to paragraph splitting
+          const paragraphs = data.content.split('\n\n').filter((p: string) => p.trim());
+          paragraphs.forEach((paragraph: string) => {
+            rows.push([paragraph.trim()]);
+          });
+        }
       } else if (data.type === 'firecrawl') {
         // For scraped content, try to extract structured data
+        const lines = data.content.split('\n').filter((line: string) => line.trim());
         lines.forEach((line: string) => {
           // Skip markdown headers and empty lines
           if (line.trim() && !line.startsWith('#')) {
@@ -108,17 +177,20 @@ export function GoogleSheetsNode({ data, id }: NodeProps<any>) {
         });
       } else {
         // Default: add each line as a row
+        const lines = data.content.split('\n').filter((line: string) => line.trim());
         lines.forEach((line: string) => {
           rows.push([line.trim()]);
         });
       }
       
-      // Add empty row as separator
-      rows.push(['']);
+      // Add empty row as separator between different data sources
+      if (index < inputData.length - 1) {
+        rows.push(['']);
+      }
     });
     
     return rows;
-  }, []);
+  }, [tryParseJSON]);
 
   // Write data to Google Sheets
   const handleWriteToSheets = useCallback(async () => {
@@ -237,6 +309,9 @@ export function GoogleSheetsNode({ data, id }: NodeProps<any>) {
             ))}
             <div className="connection-hint">
               💡 Data will be written to the sheet starting from the specified cell
+              {incomingData.some((data: any) => data.hasJSON) && (
+                <div>🔗 JSON data detected - each property will become a separate column</div>
+              )}
             </div>
           </div>
         ) : currentEdges.some(edge => edge.target === id) ? (
